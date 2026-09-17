@@ -56,26 +56,39 @@ elif option == "Extract Pages":
 
 # Tool 3: Convert Word to PDF via dxpdf utility
 # Tool 3: Convert Word to PDF via docx2pdf
+# Tool 3: Convert Word to PDF via libreoffice on Cloud Linux
 elif option == "Word to PDF":
-    st.header("Convert Word Document (.docx) to PDF")
+    st.header("✨ Convert Word Document (.docx) to PDF")
     uploaded_file = st.file_uploader("Upload a Word file", type=["docx"])
     
     if uploaded_file:
         temp_docx = "temp_input.docx"
-        temp_pdf = "temp_output.pdf"
         
         # Save uploaded file locally
         with open(temp_docx, "wb") as f:
             f.write(uploaded_file.getbuffer())
             
         try:
-            # Import library inside block to ensure it loads cleanly
-            from docx2pdf import convert
+            import subprocess
+            import platform
             
-            # Perform conversion cleanly natively on Windows
-            convert(temp_docx, temp_pdf)
+            st.info("Converting document... Please wait.")
             
-            # Read converted file
+            # Check if running on Windows (Local) or Linux (Streamlit Cloud)
+            if platform.system() == "Windows":
+                from docx2pdf import convert
+                temp_pdf = "temp_output.pdf"
+                convert(temp_docx, temp_pdf)
+            else:
+                # Cloud Environment Linux Subprocess Execution
+                # Uses headless LibreOffice to securely parse and build the PDF
+                subprocess.run(
+                    ["libreoffice", "--headless", "--convert-to", "pdf", temp_docx],
+                    check=True
+                )
+                temp_pdf = "temp_input.pdf"  # LibreOffice naming convention output
+            
+            # Read converted file bytes
             with open(temp_pdf, "rb") as f:
                 pdf_bytes = f.read()
                 
@@ -87,12 +100,12 @@ elif option == "Word to PDF":
                 mime="application/pdf"
             )
             
+            # Post-cleanup
+            os.remove(temp_pdf)
+            
         except Exception as e:
             st.error(f"Error during conversion: {e}")
             
         finally:
-            # Clean up temp files safely even if execution crashed
             if os.path.exists(temp_docx):
                 os.remove(temp_docx)
-            if os.path.exists(temp_pdf):
-                os.remove(temp_pdf)
