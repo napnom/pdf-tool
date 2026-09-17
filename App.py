@@ -9,7 +9,8 @@ st.title("Multi-Tool PDF Web App")
 st.write("A locally hosted alternative to iLovePDF.")
 
 # Sidebar navigation for choosing features
-option = st.sidebar.selectbox("Choose a tool", ["Merge PDFs", "Extract Pages", "Word to PDF"])
+option = st.sidebar.selectbox("Choose a tool", ["Merge PDFs", "Extract Pages", "Word to PDF", "MOV to MP4"])
+
 
 # Tool 1: Merge PDFs functionality using pypdf and BytesIO streams
 if option == "Merge PDFs":
@@ -109,3 +110,52 @@ elif option == "Word to PDF":
         finally:
             if os.path.exists(temp_docx):
                 os.remove(temp_docx)
+
+# Tool 4: Convert MOV to MP4 via FFmpeg
+elif option == "MOV to MP4":
+    st.header("🎬 Convert MOV Video to MP4")
+    uploaded_file = st.file_uploader("Upload a .mov video file", type=["mov"])
+    
+    if uploaded_file:
+        temp_mov = "temp_input.mov"
+        temp_mp4 = "temp_output.mp4"
+        
+        # Save uploaded file locally
+        with open(temp_mov, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+            
+        try:
+            import ffmpeg
+            
+            st.info("Processing video conversion... This might take a moment depending on file size.")
+            
+            # Execute efficient H.264 video conversion via FFmpeg
+            (
+                ffmpeg
+                .input(temp_mov)
+                .output(temp_mp4, vcodec='libx264', acodec='aac', loglevel="error")
+                .overwrite_output()
+                .run()
+            )
+            
+            # Read converted video bytes
+            with open(temp_mp4, "rb") as f:
+                video_bytes = f.read()
+                
+            st.success("Conversion successful!")
+            st.download_button(
+                "📥 Download MP4 Video", 
+                data=video_bytes, 
+                file_name=uploaded_file.name.replace(".mov", ".mp4"), 
+                mime="video/mp4"
+            )
+            
+        except Exception as e:
+            st.error(f"Error during video conversion: {e}")
+            
+        finally:
+            # Safe cleanup of temporary media assets
+            if os.path.exists(temp_mov):
+                os.remove(temp_mov)
+            if os.path.exists(temp_mp4):
+                os.remove(temp_mp4)

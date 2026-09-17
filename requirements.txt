@@ -1,3 +1,4 @@
 streamlit
 pypdf
 docx2pdf
+ffmpeg-python
